@@ -165,9 +165,9 @@ public class CopyJarsMojo extends AbstractCopyJarsMojo {
 		String subpath = System.getProperty(imageJSubDirectoryProperty);
 		if (subpath == null) subpath = project.getProperties().getProperty(imageJSubDirectoryProperty);
 		if (subpath == null) { subpath = ""; }
-		
-		imagejDirectory = new File(interpolated,subpath);
-		
+
+		File imagejSubdirectory = new File(interpolated,subpath);
+
 		if (!imagejDirectory.isDirectory()) {
 			getLog().warn(
 				"'" + imagejDirectory + "'" +
@@ -197,6 +197,12 @@ public class CopyJarsMojo extends AbstractCopyJarsMojo {
 					if (scope != null && !scope.equals(Artifact.SCOPE_COMPILE) &&
 						!scope.equals(Artifact.SCOPE_RUNTIME)) continue;
 					try {
+						if (project.getArtifact().equals(artifact)) {
+							installArtifact(artifact, imagejSubdirectory, false,
+								deleteOtherVersions, artifactResolver, remoteRepositories,
+								localRepository);
+							continue;
+						}
 						installArtifact(artifact, imagejDirectory, false,
 							deleteOtherVersions, artifactResolver, remoteRepositories,
 							localRepository);

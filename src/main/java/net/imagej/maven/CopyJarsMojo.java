@@ -80,10 +80,11 @@ public class CopyJarsMojo extends AbstractCopyJarsMojo {
 	 * If no property of that name exists, it is simply taken as being the empty string .
 	 * </p>
 	 * 
-	 * @parameter property="jar.subdirectory"
-	 */	
-	private String imageJSubDirectoryProperty;
-	
+	 * @parameter property="imagej.app.subdirectory"
+	 */
+	@Parameter(defaultValue="imagej.app.subdirectory")
+	private String imagejSubdirectoryProperty;
+
 	/**
 	 * Whether to delete other versions when copying the files.
 	 * <p>
@@ -156,17 +157,16 @@ public class CopyJarsMojo extends AbstractCopyJarsMojo {
 			return;
 		}
 		final String interpolated = interpolate(path, project, session);
-		
-		if (imageJSubDirectoryProperty == null) {
+		imagejDirectory = new File(interpolated);
+
+		if (imagejSubdirectoryProperty == null) {
 			getLog()
 			.info(
 				"No property name for the jars.subdirectory/ directory location was specified; Installing in default location");
 		}
-		String subpath = System.getProperty(imageJSubDirectoryProperty);
-		if (subpath == null) subpath = project.getProperties().getProperty(imageJSubDirectoryProperty);
+		String subpath = System.getProperty(imagejSubdirectoryProperty);
+		if (subpath == null) subpath = project.getProperties().getProperty(imagejSubdirectoryProperty);
 		if (subpath == null) { subpath = ""; }
-
-		File imagejSubdirectory = new File(interpolated,subpath);
 
 		if (!imagejDirectory.isDirectory()) {
 			getLog().warn(
@@ -198,7 +198,7 @@ public class CopyJarsMojo extends AbstractCopyJarsMojo {
 						!scope.equals(Artifact.SCOPE_RUNTIME)) continue;
 					try {
 						if (project.getArtifact().equals(artifact)) {
-							installArtifact(artifact, imagejSubdirectory, false,
+							installArtifact(artifact, imagejDirectory, subpath, false,
 								deleteOtherVersions, artifactResolver, remoteRepositories,
 								localRepository);
 							continue;

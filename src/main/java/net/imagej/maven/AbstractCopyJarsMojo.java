@@ -131,6 +131,17 @@ public abstract class AbstractCopyJarsMojo extends AbstractMojo {
 		ArtifactRepository localRepository) throws ArtifactResolutionException,
 		ArtifactNotFoundException, IOException
 	{
+		installArtifact(artifact, imagejDirectory, "", force, deleteOtherVersions,
+			resolver, remoteRepositories, localRepository);
+	}
+
+	protected void installArtifact(final Artifact artifact,
+		final File imagejDirectory, final String subdirectory, final boolean force,
+		final boolean deleteOtherVersions, final ArtifactResolver resolver,
+		List<ArtifactRepository> remoteRepositories,
+		ArtifactRepository localRepository) throws ArtifactResolutionException,
+		ArtifactNotFoundException, IOException
+	{
 		resolver.resolve(artifact, remoteRepositories, localRepository);
 
 		if (!"jar".equals(artifact.getType())) return;
@@ -138,7 +149,9 @@ public abstract class AbstractCopyJarsMojo extends AbstractMojo {
 		final File source = artifact.getFile();
 		final File targetDirectory;
 
-		if (isIJ1Plugin(source)) {
+		if (subdirectory != "") {
+			targetDirectory = new File(imagejDirectory, subdirectory);
+		} else if (isIJ1Plugin(source)) {
 			targetDirectory = new File(imagejDirectory, "plugins");
 		}
 		else if ("ome".equals(artifact.getGroupId()) ||

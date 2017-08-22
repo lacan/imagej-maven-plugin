@@ -34,6 +34,9 @@ package net.imagej.maven;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -42,6 +45,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.repository.ArtifactRepository;
@@ -178,18 +182,18 @@ public abstract class AbstractCopyJarsMojo extends AbstractMojo {
 			FileUtils.copyFile(source, target);
 		}
 
-		final Collection<File> otherVersions = getEncroachingVersions(target);
+		final Collection<Path> otherVersions = getEncroachingVersions(Paths.get(target.toURI()));
 		if (otherVersions != null && !otherVersions.isEmpty()) {
-			for (final File file : otherVersions) {
+			for (final Path file : otherVersions) {
 				if (!deleteOtherVersions) {
 					getLog().warn(
-						"Possibly incompatible version exists: " + file.getName());
+						"Possibly incompatible version exists: " + file.getFileName());
 				}
-				else if (file.delete()) {
-					getLog().info("Deleted overridden " + file.getName());
+				else if (Files.deleteIfExists(file)) {
+					getLog().info("Deleted overridden " + file.getFileName());
 				}
 				else {
-					getLog().warn("Could not delete overridden " + file.getName());
+					getLog().warn("Could not delete overridden " + file.getFileName());
 				}
 			}
 		}
@@ -222,6 +226,32 @@ public abstract class AbstractCopyJarsMojo extends AbstractMojo {
 	private final static int PREFIX_INDEX = 1;
 	private final static int SUFFIX_INDEX = 5;
 
+	
+	private static Collection<Path> getEncroachingVersions(final Path file) {
+		
+		
+		final Matcher matcher = versionPattern.matcher(file.getFileName().toString());
+		final String prefix = matcher.group(PREFIX_INDEX);
+		final String suffix = matcher.group(SUFFIX_INDEX);
+		
+		try {
+			final Path parent = file.getParent();
+
+			final Collection<Path> result = Files.walk(parent) 
+			.filter(f -> {
+				if(!f.startsWith(prefix)) return false;
+				return matcher.matches() &&
+					prefix.equals(matcher.group(PREFIX_INDEX)) &&
+					suffix.equals(matcher.group(SUFFIX_INDEX));
+			})
+			.collect(Collectors.toCollection(ArrayList::new));
+			return result;
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			return null;
+		}
+	}
+	
 	private static Collection<File> getEncroachingVersions(final File file) {
 		// TODO reuse FileUtils.stripFilenameVersion logic
 		final Matcher matcher = versionPattern.matcher(file.getName());

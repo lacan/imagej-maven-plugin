@@ -231,6 +231,9 @@ public abstract class AbstractCopyJarsMojo extends AbstractMojo {
 		
 		
 		final Matcher matcher = versionPattern.matcher(file.getFileName().toString());
+		if (!matcher.matches()) return null;
+
+		
 		final String prefix = matcher.group(PREFIX_INDEX);
 		final String suffix = matcher.group(SUFFIX_INDEX);
 		
